@@ -26,7 +26,7 @@ local M = {}
 ---@field debug_block string|false Debug block detection
 
 M.defaults = {
-    filetypes = { "python", "julia", "matlab" },
+    filetypes = { "python", "julia", "matlab", "quarto" },
     keymaps = {
         send_line      = "<CR>",
         send_selection = "<CR>",

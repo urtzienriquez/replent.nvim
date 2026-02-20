@@ -37,12 +37,29 @@ end
 
 --- Register all replent keymaps for the current buffer.
 --- Called from the FileType autocommand.
-function M.attach()
+---@param lang_override? string  Force a specific language (used for quarto)
+function M.attach(lang_override)
     local cfg     = require("replent.config").options
     local km      = cfg.keymaps
     local actions = require("replent.actions")
     local tmux    = require("replent.tmux")
     local ft      = vim.bo.filetype
+
+    -- For quarto buffers, detect the primary chunk language.
+    -- lang is what drives REPL-launcher / block-detection keymaps;
+    -- ft drives the filetype check for safe_map.
+    local lang = lang_override
+    if not lang then
+        if ft == "quarto" then
+            lang = require("replent.quarto").detect()
+            if not lang then
+                -- No supported language chunk found – nothing to do.
+                return
+            end
+        else
+            lang = ft
+        end
+    end
 
     -- Send current line/block (normal mode)
     safe_map("n", km.send_line, function()
@@ -65,7 +82,7 @@ function M.attach()
     end, "Sync cwd to REPL")
 
     -- Filetype-specific REPL launchers & closers
-    if ft == "python" then
+    if lang == "python" then
         safe_map("n", km.start_python, function()
             tmux.start_repl("python")
         end, "Start Python REPL")
@@ -73,7 +90,7 @@ function M.attach()
             tmux.close_repl("python")
         end, "Close Python REPL")
 
-    elseif ft == "julia" then
+    elseif lang == "julia" then
         safe_map("n", km.start_julia, function()
             tmux.start_repl("julia")
         end, "Start Julia REPL")
@@ -84,7 +101,7 @@ function M.attach()
             actions.julia_instantiate()
         end, "Activate + instantiate Julia project")
 
-    elseif ft == "matlab" then
+    elseif lang == "matlab" then
         safe_map("n", km.start_matlab, function()
             tmux.start_repl("matlab")
         end, "Start MATLAB REPL")
@@ -94,7 +111,7 @@ function M.attach()
     end
 
     -- Debug block detection (only for languages that support it)
-    if ft == "julia" or ft == "python" then
+    if lang == "julia" or lang == "python" then
         safe_map("n", km.debug_block, function()
             actions.debug_block()
         end, "Debug block detection")

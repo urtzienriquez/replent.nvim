@@ -2,22 +2,34 @@
 
 local M = {}
 
---- Detect whether the current filetype has smart block detection.
+--- Resolve the effective language for the current buffer.
+--- For quarto files, returns the detected chunk language.
+--- For all others, returns vim.bo.filetype.
+---@return string|nil
+local function effective_lang()
+    local ft = vim.bo.filetype
+    if ft == "quarto" then
+        return require("replent.quarto").detect()
+    end
+    return ft
+end
+
+--- Detect whether the current buffer has smart block detection.
 ---@return boolean
 local function has_smart_blocks()
-    local ft = vim.bo.filetype
-    return ft == "julia" or ft == "python"
+    local lang = effective_lang()
+    return lang == "julia" or lang == "python"
 end
 
 --- Get (text, start_line, end_line) for the block/line at cursor, dispatching
 --- to the language-specific module when available.
 ---@return string|nil, integer, integer
 function M.get_send_text()
-    local ft = vim.bo.filetype
+    local lang = effective_lang()
 
-    if ft == "julia" then
+    if lang == "julia" then
         return require("replent.julia").get_send_text()
-    elseif ft == "python" then
+    elseif lang == "python" then
         return require("replent.python").get_send_text()
     end
 
@@ -118,13 +130,13 @@ end
 
 --- Run the language-specific debug function.
 function M.debug_block()
-    local ft = vim.bo.filetype
-    if ft == "julia" then
+    local lang = effective_lang()
+    if lang == "julia" then
         require("replent.julia").debug()
-    elseif ft == "python" then
+    elseif lang == "python" then
         require("replent.python").debug()
     else
-        vim.notify("[replent] Block debug not supported for " .. ft, vim.log.levels.WARN)
+        vim.notify("[replent] Block debug not supported for " .. (lang or "unknown"), vim.log.levels.WARN)
     end
 end
 
