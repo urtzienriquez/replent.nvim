@@ -1,0 +1,144 @@
+*replent.txt*    Lightweight REPL integration built on vim-slime
+
+Author:   you
+License:  MIT
+
+==============================================================================
+CONTENTS                                                        *replent-contents*
+
+    1. Introduction .............. |replent-intro|
+    2. Requirements .............. |replent-requirements|
+    3. Setup ..................... |replent-setup|
+    4. Configuration ............. |replent-config|
+    5. Default Keymaps ........... |replent-keymaps|
+    6. Public API ................ |replent-api|
+    7. lazy.nvim spec ............ |replent-lazy|
+
+==============================================================================
+1. Introduction                                                   *replent-intro*
+
+replent.nvim provides smart, language-aware REPL integration using vim-slime
+as the transport layer.  Features include:
+
+  • Smart block detection for Python and Julia (sends the whole function /
+    class / loop the cursor is inside, not just the current line).
+  • Julia channel selection via juliaup.
+  • Working-directory synchronisation between Neovim and the REPL.
+  • Buffer-local keymaps that activate only for relevant filetypes and never
+    override mappings you have already set.
+
+No `setup()` call is required.  The plugin works with sensible defaults the
+moment a supported filetype buffer is opened.
+
+==============================================================================
+2. Requirements                                               *replent-requirements*
+
+  • Neovim ≥ 0.10
+  • jpalardy/vim-slime  (must be listed as a dependency)
+  • tmux  (the only supported REPL transport)
+  • Optional: juliaup, fzf-lua (for Julia channel picker)
+
+==============================================================================
+3. Setup                                                          *replent-setup*
+
+The simplest setup – just add the plugin with vim-slime as a dependency.
+No Lua config needed: >
+
+    -- lazy.nvim
+    { "yourname/replent.nvim", ft = {"python","julia","matlab"},
+      dependencies = { "jpalardy/vim-slime" } }
+
+To customise, pass an `opts` table (lazy.nvim calls `setup()` for you): >
+
+    {
+      "yourname/replent.nvim",
+      ft = { "python", "julia", "matlab" },
+      dependencies = { "jpalardy/vim-slime" },
+      opts = {
+        filetypes = { "python", "julia" },   -- drop matlab
+        keymaps   = { start_python = "<leader>rp", debug_block = false },
+      },
+    }
+
+Or call setup manually before opening a file: >
+
+    require("replent").setup({ keymaps = { send_buffer = false } })
+
+==============================================================================
+4. Configuration                                                 *replent-config*
+
+All fields are optional.  Unset fields use the defaults shown below.
+
+`filetypes`       list of filetypes where replent activates.
+                  Default: `{ "python", "julia", "matlab" }`
+
+`keymaps`         table of keymap strings.  Set any key to `false` to
+                  disable that mapping entirely.
+                  See |replent-keymaps| for the full list.
+
+`repl_commands`   table mapping filetype → shell command used to launch
+                  the REPL in a new tmux split.
+                  Default: >
+                    { python = "ipython --no-confirm-exit --no-banner --quiet",
+                      julia  = "julia",
+                      matlab = "matlab -nodesktop -nosplash" }
+
+`auto_cd`         (boolean) not yet implemented, reserved for future use.
+                  Default: `false`
+
+==============================================================================
+5. Default Keymaps                                               *replent-keymaps*
+
+All keymaps are buffer-local and only set for configured filetypes.
+A keymap is silently skipped if you already have a buffer-local mapping on
+that key.
+
+Key name in config      Default     Mode  Action
+─────────────────────────────────────────────────────────────────────────────
+`send_line`             <CR>        n     Send block / line at cursor
+`send_selection`        <CR>        v     Send visual selection
+`send_buffer`           <leader>sb  n     Send entire buffer
+`start_python`          <leader>op  n     Open Python REPL
+`start_julia`           <leader>oj  n     Open Julia REPL (with channel picker)
+`start_matlab`          <leader>om  n     Open MATLAB REPL
+`close_python`          <leader>qp  n     Close Python REPL
+`close_julia`           <leader>qj  n     Close Julia REPL
+`close_matlab`          <leader>qm  n     Close MATLAB REPL
+`sync_cwd`              <leader>cd  n     Sync Neovim cwd → REPL
+`julia_instantiate`     <leader>ji  n     Pkg.activate(".") + Pkg.instantiate()
+`debug_block`           <leader>bc  n     Print block detection info (dev)
+
+==============================================================================
+6. Public API                                                      *replent-api*
+
+`require("replent").setup(opts)`
+    Merge user options with defaults.  Optional; call before opening a file.
+
+`require("replent").send_block()`
+    Send the block/line at the cursor to the active REPL.
+
+`require("replent").send_selection()`
+    Send the current visual selection.
+
+`require("replent").send_buffer()`
+    Send the entire buffer.
+
+`require("replent").start_repl(ft)`
+    Start a REPL for filetype `ft` (e.g. `"python"`).
+
+`require("replent").close_repl(ft)`
+    Close the REPL for filetype `ft`.
+
+`require("replent").sync_cwd()`
+    Synchronise the REPL's working directory to Neovim's cwd.
+
+`require("replent").has_active_repl()`
+    Returns `true` when a supported REPL is running in the last tmux pane.
+
+==============================================================================
+7. lazy.nvim spec                                                  *replent-lazy*
+
+See `lazy_spec.lua` in the plugin root for a ready-to-use lazy.nvim spec
+with inline comments explaining every option.
+
+vim:ft=help:tw=78:
