@@ -2,8 +2,13 @@
 
 > Lightweight, language-aware REPL integration for Neovim, built on [vim-slime](https://github.com/jpalardy/vim-slime).
 
+Contributions are very welcomed! See [Contributing](#contributing)
+
+---
+
 ## Features
 
+- Meant to work with **Julia, Python and Matlab**.
 - **Smart block detection** for Python and Julia – sends the whole function, class, or loop the cursor lives in, not just one line
 - **Julia channel picker** via `juliaup` (uses fzf-lua when available)
 - **Working-directory sync** between Neovim and the REPL
@@ -11,6 +16,8 @@
 - **Zero-config** – works out of the box; `setup()` is entirely optional
 
 The `plugin/` entrypoint does nothing on startup beyond registering a FileType autocommand. Every module is `require`d lazily inside that callback, so the plugin has zero startup cost for unrelated filetypes.
+
+---
 
 ## Requirements
 
@@ -21,6 +28,8 @@ The `plugin/` entrypoint does nothing on startup beyond registering a FileType a
 | tmux | Only supported transport |
 | [juliaup](https://github.com/JuliaLang/juliaup) | Optional – for Julia channel picker |
 | [fzf-lua](https://github.com/ibhagwan/fzf-lua) | Optional – for Julia channel picker UI |
+
+---
 
 ## Installation
 
@@ -69,6 +78,8 @@ require("replent").setup({
 })
 ```
 
+---
+
 ## Default Keymaps
 
 All keymaps are **buffer-local** and only appear for configured filetypes. A mapping is silently skipped when you already have a buffer-local map on that key.
@@ -88,6 +99,8 @@ All keymaps are **buffer-local** and only appear for configured filetypes. A map
 | `julia_instantiate` | `<leader>ji` | n | `Pkg.activate` + `Pkg.instantiate` |
 | `debug_block` | `<leader>bc` | n | Debug block detection |
 
+---
+
 ## Public API
 
 ```lua
@@ -102,6 +115,30 @@ replent.close_repl("julia")  -- close a REPL
 replent.sync_cwd()           -- sync working directory
 replent.has_active_repl()    -- → boolean
 ```
+
+---
+
+## Contributing
+
+Contributions are very welcome — bug reports, suggestions, and especially code. If you use a language or workflow that replent doesn't handle well, opening an issue or a pull request is the best way to improve it. Adding smart block detection for a new language (see `lua/replent/julia.lua` or `lua/replent/python.lua` for the pattern) or support for a new REPL transport are particularly impactful contributions.
+
+---
+
+## Similar projects
+
+- **[R.nvim](https://github.com/R-nvim/R.nvim)** — the biggest inspiration for replent, and the best example of language-specific REPL integration in Neovim. If you work with R, use this — it offers a dedicated R communication layer, live autocompletion from your R environment, an object browser, inline help, and deep Quarto/RMarkdown support, among others.
+
+- **[matlab.nvim](https://github.com/idossha/matlab.nvim)** — another big inspiration for this plugin. It is simple, yet very powerful to develop and work with the matlab programming language in neovim. It uses tmux to communicate neovim with matlab.
+
+- **[vim-slime](https://github.com/jpalardy/vim-slime)** — the transport layer replent is built on. If you don't need smart block detection or language-specific features, vim-slime alone may be all you need.
+
+- **[iron.nvim](https://github.com/Vigemus/iron.nvim)** — a full-featured REPL manager for Neovim. Supports many languages and transports, manages multiple REPLs simultaneously, and has its own send-motion system. More batteries included than replent, but also more configuration.
+
+- **[molten-nvim](https://github.com/benlubas/molten-nvim)** — Jupyter kernel integration for Neovim. The right choice if you want inline output rendered directly in the buffer rather than a terminal pane.
+
+- **[yarepl.nvim](https://github.com/milanglacier/yarepl.nvim)** — another lightweight REPL plugin with multi-REPL support, parallel sessions, buffer attachments, and a flexible layout system. Worth a look if you need to run several REPLs side by side or want AI CLI (Aider, Codex) integration.
+
+---
 
 ## License
 
