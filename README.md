@@ -28,7 +28,7 @@ The `plugin/` entrypoint does nothing on startup beyond registering a FileType a
 
 ```lua
 {
-  "yourname/replent.nvim",
+  "urtzienriquez/replent.nvim",
   ft = { "python", "julia", "matlab" },   -- lazy-load on these filetypes
   dependencies = { "jpalardy/vim-slime" },
   -- opts = {}  ← entirely optional, see Configuration below
@@ -43,7 +43,7 @@ Pass an `opts` table (lazy.nvim calls `setup()` for you):
 
 ```lua
 {
-  "yourname/replent.nvim",
+  "urtzienriquez/replent.nvim",
   ft = { "python", "julia", "matlab" },
   dependencies = { "jpalardy/vim-slime" },
   opts = {
