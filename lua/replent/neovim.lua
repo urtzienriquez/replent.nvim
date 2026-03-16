@@ -82,7 +82,6 @@ function M._spawn_terminal(ft, cmd)
   active_repls[ft] = { bufnr = bufnr, jobid = jobid }
   vim.api.nvim_buf_set_name(bufnr, "REPL [" .. ft .. "]")
 
-  vim.cmd("startinsert")
   vim.cmd("wincmd p")
 end
 
