@@ -68,7 +68,7 @@ end
 function M._spawn_terminal(ft, cmd)
   vim.cmd("vsplit")
 
-  local bufnr = vim.api.nvim_create_buf(false, true)
+  local bufnr = vim.api.nvim_create_buf(true, true)
   vim.api.nvim_set_current_buf(bufnr)
 
   local jobid = vim.fn.jobstart(cmd, {
