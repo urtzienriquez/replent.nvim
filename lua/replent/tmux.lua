@@ -104,7 +104,7 @@ end
 ---@param cmd string Shell command to run (e.g. "ipython --quiet")
 local function open_tmux_split(cmd)
   local cwd = vim.fn.getcwd()
-  local tmux_cmd = string.format("tmux split-window -h -c %s %s && tmux select-pane -l", vim.fn.shellescape(cwd), cmd)
+  local tmux_cmd = string.format("tmux split-window -h -c %s %s && tmux select-pane -l", vim.fn.shellescape(cwd), vim.fn.shellescape("sh -c " .. vim.fn.shellescape(cmd)))
   vim.fn.system(tmux_cmd)
 end
 
