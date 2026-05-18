@@ -6,6 +6,9 @@ function M.effective_lang()
   if ft == "quarto" then
     return require("replent.quarto").detect()
   end
+  if ft == "jnoweb" then
+    return "julia"
+  end
   return ft
 end
 

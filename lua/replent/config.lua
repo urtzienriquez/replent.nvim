@@ -3,7 +3,7 @@ local M = {}
 ---@class ReplentConfig
 M.defaults = {
   strategy = "tmux",
-  filetypes = { "python", "julia", "matlab", "quarto" },
+  filetypes = { "python", "julia", "matlab", "quarto", "jnoweb" },
   keymaps = {
     send_line = "<CR>",
     send_selection = "<CR>",

@@ -18,6 +18,9 @@ function M.attach(lang_override)
   if lang == "quarto" then
     lang = require("replent.quarto").detect()
   end
+  if lang == "jnoweb" then
+    lang = "julia"
+  end
 
   safe_map("n", km.send_line, function()
     actions.send_block()
