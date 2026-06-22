@@ -1,4 +1,5 @@
 local M = {}
+local active_repls = {}
 
 local function escape_path(path, repl_type)
   if repl_type == "python" then
@@ -16,52 +17,33 @@ function M.in_tmux()
   return vim.env.TMUX ~= nil
 end
 
---- Return the current command running in the 'last' tmux pane, or nil.
----@return string|nil
-function M.last_pane_command()
-  if not M.in_tmux() then
-    return nil
-  end
-  local h = io.popen("tmux display-message -t '{last}' -p '#{pane_current_command}' 2>/dev/null")
-  if not h then
-    return nil
-  end
-  local cmd = h:read("*l")
-  h:close()
-  return (cmd and cmd ~= "") and cmd or nil
-end
-
---- Return true when a supported REPL is active in the last tmux pane.
-function M.has_active_repl()
-  local cmd = M.last_pane_command()
-  if not cmd then
+--- Return true if the given pane still exists in tmux.
+---@param pane_id string
+---@return boolean
+local function pane_alive(pane_id)
+  if not pane_id then
     return false
   end
-  for _, name in ipairs({ "python", "python3", "julia", "MATLAB", "ipython" }) do
-    if cmd:find(name) then
-      return true
-    end
-  end
-  return false
+  local h = io.popen("tmux display-message -t " .. vim.fn.shellescape(pane_id) .. " -p '#{pane_id}' 2>/dev/null")
+  local ok = h and h:read("*l") ~= nil
+  if h then h:close() end
+  return ok
 end
 
---- Detect which REPL type ("python"|"julia"|"matlab") is running, or nil.
+--- Return true when a REPL is tracked and its pane is still alive.
+---@param ft string
+function M.has_active_repl(ft)
+  return pane_alive(active_repls[ft])
+end
+
+--- Return the REPL type for a tracked pane, or nil.
+---@param ft string
 ---@return string|nil
-function M.active_repl_type()
-  local cmd = M.last_pane_command()
-  if not cmd then
+function M.active_repl_type(ft)
+  if not pane_alive(active_repls[ft]) then
     return nil
   end
-  if cmd:find("python") or cmd:find("ipython") then
-    return "python"
-  end
-  if cmd:find("julia") then
-    return "julia"
-  end
-  if cmd:find("MATLAB") or cmd:find("matlab") then
-    return "matlab"
-  end
-  return nil
+  return ft
 end
 
 --- Get all Julia channels from juliaup.
@@ -102,10 +84,17 @@ end
 
 --- Open a new tmux split and start the given command in the project cwd.
 ---@param cmd string Shell command to run (e.g. "ipython --quiet")
+---@return string|nil pane_id of the new pane
 local function open_tmux_split(cmd)
   local cwd = vim.fn.getcwd()
-  local tmux_cmd = string.format("tmux split-window -h -c %s %s && tmux select-pane -l", vim.fn.shellescape(cwd), vim.fn.shellescape("sh -c " .. vim.fn.shellescape(cmd)))
-  vim.fn.system(tmux_cmd)
+  vim.fn.system(string.format("tmux split-window -h -c %s %s",
+    vim.fn.shellescape(cwd),
+    vim.fn.shellescape("sh -c " .. vim.fn.shellescape(cmd))))
+  local h = io.popen("tmux display-message -p '#{pane_id}' 2>/dev/null")
+  local pane_id = h and h:read("*l") or nil
+  if h then h:close() end
+  vim.fn.system("tmux select-pane -l")
+  return pane_id
 end
 
 --- Start a REPL for the given filetype using config.repl_commands.
@@ -122,13 +111,15 @@ function M.start_repl(ft)
     local channels = M.julia_channels()
     if #channels == 0 then
       -- Fallback to plain julia
-      open_tmux_split(cfg.repl_commands.julia)
+      local pid = open_tmux_split(cfg.repl_commands.julia)
+      active_repls[ft] = pid
       vim.schedule(function()
         vim.notify("[replent] Started Julia REPL")
       end)
       return
     elseif #channels == 1 then
-      open_tmux_split(string.format("julia +%s", channels[1]))
+      local pid = open_tmux_split(string.format("julia +%s", channels[1]))
+      active_repls[ft] = pid
       vim.schedule(function()
         vim.notify(string.format("[replent] Started Julia +%s REPL", channels[1]))
       end)
@@ -146,7 +137,8 @@ function M.start_repl(ft)
                 return
               end
               local ch = selected[1]
-              open_tmux_split(string.format("julia +%s", ch))
+              local pid = open_tmux_split(string.format("julia +%s", ch))
+              active_repls[ft] = pid
               vim.schedule(function()
                 vim.notify(string.format("[replent] Started Julia +%s REPL", ch))
               end)
@@ -160,7 +152,8 @@ function M.start_repl(ft)
           if not ch then
             return
           end
-          open_tmux_split(string.format("julia +%s", ch))
+          local pid = open_tmux_split(string.format("julia +%s", ch))
+          active_repls[ft] = pid
           vim.schedule(function()
             vim.notify(string.format("[replent] Started Julia +%s REPL", ch))
           end)
@@ -175,7 +168,8 @@ function M.start_repl(ft)
     vim.notify(string.format("[replent] No REPL command configured for %q", ft), vim.log.levels.WARN)
     return
   end
-  open_tmux_split(cmd)
+  local pid = open_tmux_split(cmd)
+  active_repls[ft] = pid
   vim.schedule(function()
     vim.notify(string.format("[replent] Started %s REPL", ft))
   end)
@@ -187,10 +181,15 @@ function M.close_repl(ft)
   if not M.in_tmux() then
     return
   end
+  local pane_id = active_repls[ft]
+  if not pane_id then
+    return
+  end
   local exits = { python = "exit()", julia = "exit()", matlab = "exit" }
   local cmd = exits[ft]
   if cmd then
-    vim.fn.system(string.format("tmux send-keys -t '{last}' %s Enter", vim.fn.shellescape(cmd)))
+    vim.fn.system(string.format("tmux send-keys -t %s %s Enter", vim.fn.shellescape(pane_id), vim.fn.shellescape(cmd)))
+    active_repls[ft] = nil
     vim.schedule(function()
       vim.notify(string.format("[replent] Closed %s REPL", ft))
     end)
@@ -203,13 +202,15 @@ function M.sync_cwd()
     vim.notify("[replent] Not in a tmux session", vim.log.levels.ERROR)
     return
   end
-  if not M.has_active_repl() then
-    vim.notify("[replent] No active REPL found", vim.log.levels.WARN)
+
+  local ft = require("replent.actions").effective_lang()
+  if not M.has_active_repl(ft) then
+    vim.notify("[replent] No active REPL found for " .. ft, vim.log.levels.WARN)
     return
   end
 
   local cwd = vim.fn.getcwd()
-  local rt = M.active_repl_type()
+  local rt = M.active_repl_type(ft)
   if not rt then
     vim.notify("[replent] Cannot detect REPL type", vim.log.levels.ERROR)
     return
@@ -228,7 +229,8 @@ function M.sync_cwd()
   }
 
   local cd = cd_cmds[rt](cwd)
-  vim.fn.system(string.format("tmux send-keys -t '{last}' %s Enter", vim.fn.shellescape(cd)))
+  local pane_id = active_repls[ft]
+  vim.fn.system(string.format("tmux send-keys -t %s %s Enter", vim.fn.shellescape(pane_id), vim.fn.shellescape(cd)))
   vim.schedule(function()
     vim.notify(string.format("[replent] Synced %s REPL → %s", rt, cwd))
   end)
