@@ -26,10 +26,15 @@ M.defaults = {
   auto_cd = false,
   -- Options used only by the "neovim" strategy
   neovim = {
-    -- Split width in columns (0 = equal 50/50 split)
+    -- Split width in columns. If the current window is wide enough the REPL
+    -- opens as a vertical split of this exact width; 0 = disabled.
     width = 80,
-    -- Split height in rows (0 = equal split; used only if width doesn't fit)
-    height = 0,
+    -- Minimum columns to leave for the editor before using an exact-width
+    -- vertical split (also used if width is disabled).
+    min_editor_width = 80,
+    -- Split height in rows, used when the vertical split doesn't fit (e.g.
+    -- narrow window). 0 = disabled (equal split is used instead).
+    height = 15,
     -- Position of the REPL split: "right", "left", "below", or "above"
     position = "right",
     -- Local options applied to the REPL window. The default keeps the REPL

@@ -69,8 +69,9 @@ Pass an `opts` table (lazy.nvim calls `setup()` for you):
 
     strategy = "neovim",                 -- use a Neovim terminal split
     neovim = {
-      width = 80,                        -- REPL width in cols (0 = 50/50)
-      height = 0,                        -- 0 = equal split (used if width n/a)
+      width = 80,                        -- exact vertical width (0 = never vertical)
+      min_editor_width = 80,             -- min editor cols before exact vertical split
+      height = 15,                       -- horizontal fallback height (0 = equal split)
       position = "right",                -- "right" | "left" | "below" | "above"
       buffer_opts = "winfixwidth winfixheight buflisted", -- use nobuflisted to hide from :ls
       esc_term = true,                   -- <Esc> exits terminal insert mode

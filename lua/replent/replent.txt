@@ -92,10 +92,16 @@ All fields are optional.  Unset fields use the defaults shown below.
 
 `neovim`          options used only by the `"neovim"` strategy (ignored by
                   the `"tmux"` strategy):
-  `neovim.width`      split width in columns.  `0` = equal 50/50 split.
+  `neovim.width`      split width in columns.  When the current window is wide
+                      enough the REPL opens as a vertical split of this exact
+                      width.  `0` = never open a vertical split.
                       Default: `80`
-  `neovim.height`     split height in rows; used only when `width` is `0`
-                      or doesn't fit.  Default: `0` (equal split)
+  `neovim.min_editor_width`
+                      minimum columns left for the editor before the
+                      exact-width vertical split is used.  Default: `80`
+  `neovim.height`     split height in rows; used when the vertical split
+                      doesn't fit (for example in a narrow window).
+                      `0` = fall back to an equal split.  Default: `15`
   `neovim.position`   split position: `"right"`, `"left"`, `"below"`, or
                       `"above"`.  Default: `"right"`
   `neovim.buffer_opts`  local options applied to the REPL window.

@@ -71,38 +71,31 @@ function M.start_repl(ft)
   end
 end
 
--- Minimum columns to leave for the editor before using an exact-width split
-local MIN_EDITOR_WIDTH = 80
-
--- Create a split sized/positioned per config.neovim.
+-- Create a split sized/positioned per config.neovim, mirroring R.nvim's
+-- split_window: exact-width vertical split when the editor has enough space,
+-- otherwise a horizontal terminal.
 local function split_window()
   local config = cfg().neovim
 
-  if config.width > 0 then
+  local nw = vim.o.number and vim.o.numberwidth or 0
+  local sw = config.width + config.min_editor_width + 1 + nw
+  if config.width > 0 and vim.fn.winwidth(0) > sw then
     -- Vertical split with an exact column width
-    local nw = vim.o.number and vim.o.numberwidth or 0
-    local sw = config.width + MIN_EDITOR_WIDTH + 1 + nw
-    if vim.fn.winwidth(0) > sw then
-      local pos = config.position:find("left") and "aboveleft" or "belowright"
+    local pos = config.position:find("left") and "aboveleft" or "belowright"
+    if config.width > 16 and config.width < (vim.fn.winwidth(0) - 17) then
       vim.cmd("silent exe '" .. pos .. " " .. config.width .. "vnew'")
-      return
+    else
+      vim.cmd("silent " .. pos .. " vnew")
     end
-  end
-
-  if config.height > 0 then
+  else
     -- Horizontal split with an exact row height
-    if config.height < (vim.fn.winheight(0) - 1) then
-      local pos = config.position:find("above") and "aboveleft" or "belowright"
+    local pos = config.position:find("above") and "aboveleft" or "belowright"
+    if config.height > 0 and config.height < (vim.fn.winheight(0) - 1) then
       vim.cmd("silent exe '" .. pos .. " " .. config.height .. "new'")
-      return
+    else
+      vim.cmd("silent " .. pos .. " new")
     end
   end
-
-  -- Default: equal split (vnew creates a dedicated empty buffer;
-  -- vsplit shares the current buffer which would destroy the editor
-  -- when jobstart(term=true) turns it into a terminal).
-  local pos = config.position:find("left") and "aboveleft" or "belowright"
-  vim.cmd("silent " .. pos .. " vnew")
 end
 
 -- Apply buffer & window options to a terminal buffer/window. <Esc> is
