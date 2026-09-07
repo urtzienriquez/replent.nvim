@@ -35,8 +35,12 @@ moment a supported filetype buffer is opened.
 
   • Neovim ≥ 0.10
   • jpalardy/vim-slime  (must be listed as a dependency)
-  • tmux  (the only supported REPL transport)
+  • tmux  (required for the default `"tmux"` strategy)
   • Optional: juliaup, fzf-lua (for Julia channel picker)
+
+  Two REPL transports are available via `strategy`:
+    "tmux"   – open the REPL in a tmux split (default)
+    "neovim" – open the REPL in a Neovim terminal split
 
 ==============================================================================
 3. Setup                                                          *replent-setup*
@@ -77,7 +81,7 @@ All fields are optional.  Unset fields use the defaults shown below.
                   See |replent-keymaps| for the full list.
 
 `repl_commands`   table mapping filetype → shell command used to launch
-                  the REPL in a new tmux split.
+                  the REPL.
                   Default: >
                     { python = "ipython --no-confirm-exit --no-banner --quiet",
                       julia  = "julia",
@@ -85,6 +89,44 @@ All fields are optional.  Unset fields use the defaults shown below.
 
 `auto_cd`         (boolean) not yet implemented, reserved for future use.
                   Default: `false`
+
+`neovim`          options used only by the `"neovim"` strategy (ignored by
+                  the `"tmux"` strategy):
+  `neovim.width`      split width in columns.  `0` = equal 50/50 split.
+                      Default: `80`
+  `neovim.height`     split height in rows; used only when `width` is `0`
+                      or doesn't fit.  Default: `0` (equal split)
+  `neovim.position`   split position: `"right"`, `"left"`, `"below"`, or
+                      `"above"`.  Default: `"right"`
+  `neovim.buffer_opts`  local options applied to the REPL window.
+                      Default: `"winfixwidth winfixheight buflisted"`
+
+                      The REPL buffer is listed in `:ls` by default; replace
+                      `buflisted` with `nobuflisted` to hide it.
+
+                      These options pin the REPL window to its size, so an
+                      external resize of the whole Neovim window (for example
+                      by a tiling window manager) shrinks the editor — a
+                      plain text buffer that recovers untouched — instead of
+                      the terminal.  Terminal scrollback does not reflow:
+                      if the REPL is squeezed while it redraws, its text is
+                      re-wrapped at the narrow width and stays that way.
+                      Pinning the REPL prevents that.  Remove `winfixwidth`
+                      and `winfixheight` only if you accept the terminal
+                      being resized by other windows.
+
+  `neovim.esc_term`   when `true`, map `<Esc>` to `<C-\><C-n>` in the REPL
+                      terminal to leave terminal-insert mode.  Default: `true`
+
+Hiding and reopening the REPL window:
+    A running REPL stays alive in its terminal buffer even when its window is
+    closed.  To hide it, close its window with `:close` (or `^Wo` to close all
+    other windows).  It keeps running, and you can keep sending code to it —
+    sending works whether the window is visible or not (you just don't see the
+    output until you revisit the buffer).  Bring the window back with the
+    <leader>oX start keymap, which reopens the existing window instead of
+    starting a second REPL.  Reopening anchors the window to the newest
+    output, so anything sent while it was hidden is immediately visible.
 
 ==============================================================================
 5. Default Keymaps                                               *replent-keymaps*
@@ -98,9 +140,9 @@ Key name in config      Default     Mode  Action
 `send_line`             <CR>        n     Send block / line at cursor
 `send_selection`        <CR>        v     Send visual selection
 `send_buffer`           <leader>sb  n     Send entire buffer
-`start_python`          <leader>op  n     Open Python REPL
-`start_julia`           <leader>oj  n     Open Julia REPL (with channel picker)
-`start_matlab`          <leader>om  n     Open MATLAB REPL
+`start_python`          <leader>op  n     Start Python REPL (or reopen its window)
+`start_julia`           <leader>oj  n     Start Julia REPL (with channel picker)
+`start_matlab`          <leader>om  n     Start MATLAB REPL (or reopen its window)
 `close_python`          <leader>qp  n     Close Python REPL
 `close_julia`           <leader>qj  n     Close Julia REPL
 `close_matlab`          <leader>qm  n     Close MATLAB REPL
@@ -124,7 +166,9 @@ Key name in config      Default     Mode  Action
     Send the entire buffer.
 
 `require("replent").start_repl(ft)`
-    Start a REPL for filetype `ft` (e.g. `"python"`).
+    Start a REPL for filetype `ft` (e.g. `"python"`).  If a REPL for that
+    filetype is already running, reopens its window if it was hidden (a
+    no-op when it is already visible).
 
 `require("replent").close_repl(ft)`
     Close the REPL for filetype `ft`.
@@ -133,7 +177,11 @@ Key name in config      Default     Mode  Action
     Synchronise the REPL's working directory to Neovim's cwd.
 
 `require("replent").has_active_repl()`
-    Returns `true` when a supported REPL is running in the last tmux pane.
+    Returns `true` when a supported REPL is running.
+
+`require("replent.neovim").reopen_win(ft)`
+    Neovim strategy only.  If the REPL buffer for `ft` is not visible in any
+    window, re-creates the split and shows it again.
 
 ==============================================================================
 7. lazy.nvim spec                                                  *replent-lazy*

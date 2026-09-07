@@ -25,7 +25,7 @@ The `plugin/` entrypoint does nothing on startup beyond registering a FileType a
 |-------------|-------|
 | Neovim ≥ 0.10 | |
 | [vim-slime](https://github.com/jpalardy/vim-slime) | Must be listed as a dependency |
-| tmux | Only supported transport |
+| tmux | Required only for the default `tmux` strategy |
 | [juliaup](https://github.com/JuliaLang/juliaup) | Optional – for Julia channel picker |
 | [fzf-lua](https://github.com/ibhagwan/fzf-lua) | Optional – for Julia channel picker UI |
 
@@ -66,6 +66,15 @@ Pass an `opts` table (lazy.nvim calls `setup()` for you):
     repl_commands = {
       python = "ipython",                -- change launch command
     },
+
+    strategy = "neovim",                 -- use a Neovim terminal split
+    neovim = {
+      width = 80,                        -- REPL width in cols (0 = 50/50)
+      height = 0,                        -- 0 = equal split (used if width n/a)
+      position = "right",                -- "right" | "left" | "below" | "above"
+      buffer_opts = "winfixwidth winfixheight buflisted", -- use nobuflisted to hide from :ls
+      esc_term = true,                   -- <Esc> exits terminal insert mode
+    },
   },
 }
 ```
@@ -89,15 +98,25 @@ All keymaps are **buffer-local** and only appear for configured filetypes. A map
 | `send_line` | `<CR>` | n | Send block / line at cursor |
 | `send_selection` | `<CR>` | v | Send visual selection |
 | `send_buffer` | `<leader>sb` | n | Send entire buffer |
-| `start_python` | `<leader>op` | n | Open Python REPL |
-| `start_julia` | `<leader>oj` | n | Open Julia REPL (channel picker) |
-| `start_matlab` | `<leader>om` | n | Open MATLAB REPL |
+| `start_python` | `<leader>op` | n | Start Python REPL (or reopen its window) |
+| `start_julia` | `<leader>oj` | n | Start Julia REPL (channel picker) |
+| `start_matlab` | `<leader>om` | n | Start MATLAB REPL (or reopen its window) |
 | `close_python` | `<leader>qp` | n | Close Python REPL |
 | `close_julia` | `<leader>qj` | n | Close Julia REPL |
 | `close_matlab` | `<leader>qm` | n | Close MATLAB REPL |
 | `sync_cwd` | `<leader>cd` | n | Sync Neovim cwd → REPL |
 | `julia_instantiate` | `<leader>ji` | n | `Pkg.activate` + `Pkg.instantiate` |
 | `debug_block` | `<leader>bc` | n | Debug block detection |
+
+### Hiding and reopening the REPL (neovim strategy)
+
+Closing the REPL window (with `:close` or `^Wo`) doesn't stop the REPL — it
+keeps running in its terminal buffer. You can keep sending code to it whether
+the window is visible or not; you just won't see the output until you revisit
+the buffer. Bring the window back with the `<leader>oX` start keymap, which
+reopens the existing window instead of starting a second REPL. Reopening
+anchors the window to the newest output, so anything sent while it was hidden
+is immediately visible.
 
 ---
 

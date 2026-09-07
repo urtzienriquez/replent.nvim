@@ -83,7 +83,8 @@ function M.slime_send(text)
 
   if cfg.strategy == "neovim" then
     vim.g.slime_target = "neovim"
-    jobid = require("replent.neovim").get_job_id(ft)
+    local neovim = require("replent.neovim")
+    jobid = neovim.get_job_id(ft)
     if jobid then
       vim.b.slime_config = { jobid = jobid }
     else

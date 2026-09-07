@@ -24,6 +24,23 @@ M.defaults = {
     matlab = "matlab -nodesktop -nosplash",
   },
   auto_cd = false,
+  -- Options used only by the "neovim" strategy
+  neovim = {
+    -- Split width in columns (0 = equal 50/50 split)
+    width = 80,
+    -- Split height in rows (0 = equal split; used only if width doesn't fit)
+    height = 0,
+    -- Position of the REPL split: "right", "left", "below", or "above"
+    position = "right",
+    -- Local options applied to the REPL window. The default keeps the REPL
+    -- at its fixed width/height, so external window resizes hit the editor
+    -- (a plain text buffer) instead of the terminal, and the REPL text is
+    -- never narrow-baked into the terminal scrollback.
+    -- Set buflisted -> nobuflisted here to hide the REPL from :ls.
+    buffer_opts = "winfixwidth winfixheight buflisted",
+    -- Map <Esc> to exit terminal-insert mode (<C-\\><C-n>)
+    esc_term = true,
+  },
 }
 
 M.options = vim.deepcopy(M.defaults)
