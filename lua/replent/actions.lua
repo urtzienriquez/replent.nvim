@@ -45,27 +45,7 @@ function M.get_send_text()
   elseif lang == "python" then
     return require("replent.python").get_send_text()
   elseif lang == "matlab" then
-    -- Simple MATLAB block detection (between %% markers)
-    local bufnr = vim.api.nvim_get_current_buf()
-    local cur = vim.api.nvim_win_get_cursor(0)[1]
-    local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
-    local start_line, end_line = cur, cur
-    for i = cur - 1, 1, -1 do
-      if lines[i]:match("^%%") then
-        start_line = i + 1
-        break
-      end
-      start_line = i
-    end
-    for i = cur + 1, #lines do
-      if lines[i]:match("^%%") then
-        end_line = i - 1
-        break
-      end
-      end_line = i
-    end
-    local block = vim.api.nvim_buf_get_lines(bufnr, start_line - 1, end_line, false)
-    return table.concat(block, "\n"), start_line, end_line
+    return require("replent.matlab").get_send_text()
   end
 
   -- Fallback: current line
@@ -109,9 +89,25 @@ function M.slime_send(text)
   end
 end
 
+--- Move the cursor to the next non-blank line after `from_line` (1-indexed).
+local function advance_to_next_code_line(from_line)
+  local total = vim.api.nvim_buf_line_count(0)
+  local lines = vim.api.nvim_buf_get_lines(0, from_line, total, false)
+  for i, l in ipairs(lines) do
+    if not l:match("^%s*$") then
+      vim.api.nvim_win_set_cursor(0, { from_line + i, 0 })
+      return
+    end
+  end
+  vim.api.nvim_win_set_cursor(0, { total, 0 })
+end
+
 function M.send_block()
-  local text, _, end_line = M.get_send_text()
+  local text, start_line, end_line = M.get_send_text()
   if not text or text:match("^%s*$") then
+    if has_smart_blocks() then
+      advance_to_next_code_line(start_line)
+    end
     return
   end
 
@@ -162,6 +158,8 @@ function M.debug_block()
     require("replent.julia").debug()
   elseif lang == "python" then
     require("replent.python").debug()
+  elseif lang == "matlab" then
+    require("replent.matlab").debug()
   end
 end
 
