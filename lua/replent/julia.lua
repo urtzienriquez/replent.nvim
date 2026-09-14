@@ -19,7 +19,7 @@ local BLOCK_START = {
   "^%s*@testset",
 }
 
-local BLOCK_END = "^%s*end"
+local BLOCK_END = "^%s*end%f[%A]"
 
 local function is_block_start(line)
   for _, pat in ipairs(BLOCK_START) do

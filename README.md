@@ -1,5 +1,7 @@
 # replent.nvim
 
+[![Tests](https://github.com/urtzienriquez/replent.nvim/actions/workflows/test.yml/badge.svg)](https://github.com/urtzienriquez/replent.nvim/actions/workflows/test.yml)
+
 > Lightweight, language-aware REPL integration for Neovim, built on [vim-slime](https://github.com/jpalardy/vim-slime).
 
 Contributions are very welcomed! See [Contributing](#contributing)
@@ -141,6 +143,29 @@ replent.has_active_repl()    -- → boolean
 ## Contributing
 
 Contributions are very welcome — bug reports, suggestions, and especially code. If you use a language or workflow that replent doesn't handle well, opening an issue or a pull request is the best way to improve it. Adding smart block detection for a new language (see `lua/replent/julia.lua` or `lua/replent/python.lua` for the pattern) or support for a new REPL transport are particularly impactful contributions.
+
+### Running tests
+
+Tests use [plenary.nvim](https://github.com/nvim-lua/plenary.nvim)'s busted-style test harness:
+
+```sh
+git clone --depth 1 https://github.com/nvim-lua/plenary.nvim \
+  ~/.local/share/nvim/site/pack/test/start/plenary.nvim
+
+nvim --headless -u tests/minimal_init.lua \
+  -c "lua require('plenary.test_harness').test_directory('tests/', { sequential = true })" \
+  -c "qa!"
+```
+
+CI runs the same suite on every push/PR against stable and nightly Neovim (see `.github/workflows/test.yml`).
+
+The suite covers both REPL backends: `tests/neovim_backend_spec.lua` drives real Neovim terminal splits (`lua/replent/neovim.lua`) end-to-end using a trivial `cat` stand-in REPL, and `tests/tmux_backend_spec.lua` covers `lua/replent/tmux.lua`'s logic (graceful behavior outside tmux, `juliaup status` parsing) unconditionally, plus a real tmux-pane end-to-end test gated behind `REPLENT_TEST_TMUX=1` — opt in locally with a scratch `$TMUX_TMPDIR` so it never touches your real tmux sessions:
+
+```sh
+TMUX_TMPDIR=/tmp/replent-tmux-test REPLENT_TEST_TMUX=1 nvim --headless -u tests/minimal_init.lua \
+  -c "lua require('plenary.test_harness').test_directory('tests/', { sequential = true })" \
+  -c "qa!"
+```
 
 ---
 
