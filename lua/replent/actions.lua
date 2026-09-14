@@ -114,8 +114,7 @@ function M.send_block()
   M.slime_send(text .. "\n")
 
   if has_smart_blocks() then
-    local total = vim.api.nvim_buf_line_count(0)
-    vim.api.nvim_win_set_cursor(0, { math.min(end_line + 1, total), 0 })
+    advance_to_next_code_line(end_line)
   end
 end
 
