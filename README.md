@@ -98,16 +98,17 @@ All keymaps are **buffer-local** and only appear for configured filetypes. A map
 
 | Config key | Default | Mode | Action |
 |---|---|---|---|
-| `send_line` | `<CR>` | n | Send block / line at cursor |
+| `send_line` | `<CR>` | n | Send block / line at cursor (jnoweb: on a chunk's header, the chunk; on the LaTeX, nothing: go to the next chunk) |
 | `send_selection` | `<CR>` | v | Send visual selection |
-| `send_buffer` | `<leader>sb` | n | Send entire buffer |
+| `send_buffer` | `<leader>sb` | n | Send entire buffer (jnoweb: its chunks' code) |
 | `start_python` | `<leader>op` | n | Start Python REPL (or reopen its window) |
 | `start_julia` | `<leader>oj` | n | Start Julia REPL (channel picker) |
 | `start_matlab` | `<leader>om` | n | Start MATLAB REPL (or reopen its window) |
 | `close_python` | `<leader>qp` | n | Close Python REPL |
 | `close_julia` | `<leader>qj` | n | Close Julia REPL |
 | `close_matlab` | `<leader>qm` | n | Close MATLAB REPL |
-| `sync_cwd` | `<leader>cd` | n | Sync Neovim cwd → REPL |
+| `sync_cwd` | `<leader>cd` | n | REPL's working directory → the file's folder (Neovim's cwd for a buffer without a file) |
+| `next_chunk` / `prev_chunk` | `]]` / `[[` | n | Next / previous chunk (jnoweb) |
 | `julia_instantiate` | `<leader>ji` | n | `Pkg.activate` + `Pkg.instantiate` |
 | `debug_block` | `<leader>bc` | n | Debug block detection |
 
@@ -134,7 +135,7 @@ replent.send_selection()     -- send visual selection
 replent.send_buffer()        -- send entire buffer
 replent.start_repl("python") -- open a REPL
 replent.close_repl("julia")  -- close a REPL
-replent.sync_cwd()           -- sync working directory
+replent.sync_cwd()           -- the REPL's working directory: the file's folder
 replent.has_active_repl()    -- → boolean
 ```
 

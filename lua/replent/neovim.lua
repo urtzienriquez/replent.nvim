@@ -183,7 +183,8 @@ function M.sync_cwd()
     return
   end
 
-  local cwd = vim.fn.getcwd()
+  local file = vim.api.nvim_buf_get_name(0) -- (the file's folder, as R.nvim's: else Nvim's)
+  local cwd = file ~= "" and vim.fn.fnamemodify(file, ":p:h") or vim.fn.getcwd()
   local cd_cmd = ""
   if ft == "python" then
     cd_cmd = string.format("import os; os.chdir('%s')\n", cwd:gsub("\\", "/"))

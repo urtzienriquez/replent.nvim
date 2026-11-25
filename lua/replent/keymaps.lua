@@ -18,8 +18,20 @@ function M.attach(lang_override)
   if lang == "quarto" then
     lang = require("replent.quarto").detect()
   end
-  if lang == "jnoweb" then
+  local noweb = lang == "jnoweb"
+  if noweb then
     lang = "julia"
+    local nw = require("replent.noweb")
+    local function jump(backward)
+      return function()
+        local line = nw.next_header(0, vim.api.nvim_win_get_cursor(0)[1], backward)
+        if line then
+          vim.api.nvim_win_set_cursor(0, { math.min(line + 1, vim.api.nvim_buf_line_count(0)), 0 })
+        end
+      end
+    end
+    safe_map("n", km.next_chunk, jump(false), "Next chunk")
+    safe_map("n", km.prev_chunk, jump(true), "Previous chunk")
   end
 
   safe_map("n", km.send_line, function()

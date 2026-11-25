@@ -209,7 +209,8 @@ function M.sync_cwd()
     return
   end
 
-  local cwd = vim.fn.getcwd()
+  local file = vim.api.nvim_buf_get_name(0) -- (the file's folder, as R.nvim's: else Nvim's)
+  local cwd = file ~= "" and vim.fn.fnamemodify(file, ":p:h") or vim.fn.getcwd()
   local rt = M.active_repl_type(ft)
   if not rt then
     vim.notify("[replent] Cannot detect REPL type", vim.log.levels.ERROR)

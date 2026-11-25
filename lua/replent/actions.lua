@@ -103,6 +103,18 @@ local function advance_to_next_code_line(from_line)
 end
 
 function M.send_block()
+  if vim.bo.filetype == "jnoweb" then -- (chunks: see noweb.lua)
+    local text, _, _, go = require("replent.noweb").get_send_text()
+    if text and not text:match("^%s*$") then
+      M.slime_send(text .. "\n")
+    end
+    if go then
+      vim.api.nvim_win_set_cursor(0, { math.min(go, vim.api.nvim_buf_line_count(0)), 0 })
+    elseif text then
+      advance_to_next_code_line(vim.api.nvim_win_get_cursor(0)[1])
+    end
+    return
+  end
   local text, start_line, end_line = M.get_send_text()
   if not text or text:match("^%s*$") then
     if has_smart_blocks() then
@@ -143,6 +155,9 @@ end
 function M.send_buffer()
   local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
   local text = table.concat(lines, "\n")
+  if vim.bo.filetype == "jnoweb" then -- (its chunks' code: not the LaTeX)
+    text = require("replent.noweb").all_code(0)
+  end
   M.slime_send(text .. "\n")
   vim.notify("[replent] Sent entire buffer to REPL")
 end

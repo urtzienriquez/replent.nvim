@@ -15,6 +15,8 @@ M.defaults = {
     close_julia = "<leader>qj",
     close_matlab = "<leader>qm",
     sync_cwd = "<leader>cd",
+    next_chunk = "]]", -- (jnoweb)
+    prev_chunk = "[[",
     julia_instantiate = "<leader>ji",
     debug_block = "<leader>bc",
   },
